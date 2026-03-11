@@ -1,0 +1,685 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Redemption Dashboard</title>
+  <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    body {
+      min-height: 100vh;
+      background: #f5f5f7;
+      font-family: 'DM Sans', sans-serif;
+      color: #111827;
+      padding: 24px 16px;
+    }
+
+    .container { max-width: 860px; margin: 0 auto; }
+
+    .header { margin-bottom: 20px; }
+    .header-top {
+      display: flex; justify-content: space-between;
+      align-items: flex-start; flex-wrap: wrap; gap: 16px;
+    }
+
+    .mode-toggle {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      margin-top: 14px;
+      padding: 2px;
+      border-radius: 999px;
+      background: #e5e7eb;
+    }
+
+    .mode-pill {
+      border: none;
+      background: transparent;
+      padding: 6px 12px;
+      border-radius: 999px;
+      font-size: 11px;
+      font-weight: 600;
+      text-transform: uppercase;
+      letter-spacing: 0.08em;
+      color: #6b7280;
+      cursor: pointer;
+      font-family: 'DM Sans', sans-serif;
+      transition: background 0.15s, color 0.15s;
+    }
+
+    .mode-pill.active {
+      background: #ffffff;
+      color: #111827;
+      box-shadow: 0 4px 10px rgba(15,23,42,0.12);
+    }
+
+    .badge {
+      display: inline-block; font-size: 10px; font-weight: 700;
+      letter-spacing: 0.12em; color: #534da0;
+      background: rgba(83,77,160,0.08); border: 1px solid rgba(83,77,160,0.3);
+      border-radius: 999px; padding: 4px 12px; margin-bottom: 10px;
+    }
+
+    .live-dot {
+      display: inline-block; width: 7px; height: 7px;
+      background: #534da0; border-radius: 50%; margin-right: 6px;
+      animation: blink 1.5s ease-in-out infinite;
+    }
+
+    @keyframes blink {
+      0%, 100% { opacity: 1; }
+      50% { opacity: 0.3; }
+    }
+
+    h1 {
+      font-size: 32px; font-weight: 700; letter-spacing: -0.02em;
+      color: #111827; line-height: 1.1;
+    }
+
+    .subtitle { font-size: 14px; color: #6b7280; margin-top: 6px; }
+
+    .header-actions { display: flex; align-items: center; gap: 12px; }
+
+    .stat-card {
+      display: flex; flex-direction: column; align-items: center;
+      background: #ffffff; border: 1px solid rgba(148,163,184,0.35);
+      border-radius: 10px; padding: 10px 20px;
+      box-shadow: 0 10px 30px rgba(15,23,42,0.06);
+    }
+
+    .stat-number { font-size: 28px; font-weight: 700; color: #534da0; line-height: 1; }
+    .stat-label {
+      font-size: 10px; font-weight: 500; color: #a1a1aa;
+      letter-spacing: 0.08em; text-transform: uppercase; margin-top: 2px;
+    }
+
+    .refresh-btn {
+      display: flex; align-items: center; gap: 7px;
+      background: #ffffff; color: #111827;
+      border: 1px solid rgba(148,163,184,0.6); border-radius: 999px;
+      padding: 10px 18px; font-size: 13px; font-weight: 500;
+      font-family: 'DM Sans', sans-serif; cursor: pointer; transition: all 0.15s ease-out;
+    }
+
+    .refresh-btn:hover {
+      background: #f3f4ff;
+      border-color: #534da0;
+      color: #111827;
+      box-shadow: 0 8px 20px rgba(83,77,160,0.18);
+    }
+    .refresh-btn:disabled { opacity: 0.5; cursor: not-allowed; }
+    .refresh-btn svg.spinning { animation: spin 1s linear infinite; }
+
+    @keyframes spin { to { transform: rotate(360deg); } }
+
+    .last-refresh { font-size: 11px; color: #52525b; margin-top: 12px; }
+
+    /* Search */
+    .search-wrap { position: relative; margin-bottom: 20px; }
+    .search-wrap svg {
+      position: absolute; left: 14px; top: 50%;
+      transform: translateY(-50%); pointer-events: none;
+    }
+
+    .search-input {
+      width: 100%; background: #ffffff;
+      border: 1px solid rgba(148,163,184,0.6); border-radius: 999px;
+      padding: 12px 16px 12px 42px; font-size: 14px; color: #111827;
+      font-family: 'DM Sans', sans-serif; outline: none; transition: border-color 0.15s, box-shadow 0.15s;
+    }
+
+    .search-input:focus {
+      border-color: #534da0;
+      box-shadow: 0 0 0 1px #534da0, 0 6px 18px rgba(83,77,160,0.16);
+    }
+    .search-input::placeholder { color: #9ca3af; }
+
+    /* Loading */
+    .loading { display: flex; flex-direction: column; gap: 12px; }
+    .skeleton {
+      height: 160px; border-radius: 14px;
+      background: linear-gradient(90deg, #e5e7eb 25%, #f3f4ff 50%, #e5e7eb 75%);
+      background-size: 200% 100%; animation: shimmer 1.5s infinite;
+    }
+
+    @keyframes shimmer {
+      0% { background-position: 200% 0; }
+      100% { background-position: -200% 0; }
+    }
+
+    /* Error */
+    .error-bar {
+      background: #fef2f2; border: 1px solid #fecaca;
+      border-radius: 8px; padding: 12px 16px; font-size: 13px; color: #b91c1c;
+      margin-bottom: 16px; display: none;
+    }
+
+    .error-bar.visible { display: block; }
+
+    /* Cards */
+    .card-grid { display: flex; flex-direction: column; gap: 14px; }
+
+    @keyframes fadeInUp {
+      from { opacity: 0; transform: translateY(12px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+
+    .card {
+      background: #ffffff; border-radius: 14px; padding: 20px 22px;
+      border: 1px solid rgba(148,163,184,0.4);
+      box-shadow: 0 16px 40px rgba(15,23,42,0.08);
+      animation: fadeInUp 0.4s ease both;
+      transition: box-shadow 0.2s, border-color 0.2s, transform 0.2s;
+    }
+
+    .card:hover {
+      border-color: #534da0;
+      box-shadow: 0 18px 44px rgba(83,77,160,0.22);
+      transform: translateY(-2px);
+    }
+
+    .card-header { display: flex; align-items: center; justify-content: space-between; gap: 14px; margin-bottom: 16px; }
+
+    .avatar {
+      width: 44px; height: 44px; border-radius: 999px;
+      background: linear-gradient(135deg, #534da0, #7c73ff);
+      display: flex; align-items: center; justify-content: center;
+      font-size: 18px; font-weight: 700; color: #fff; flex-shrink: 0;
+    }
+
+    .card-name { font-size: 18px; font-weight: 600; color: #111827; line-height: 1.2; }
+    .source-tag {
+      font-size: 10px; font-weight: 500; color: #a1a1aa;
+      letter-spacing: 0.06em; text-transform: uppercase; margin-top: 4px;
+    }
+
+    .id-row {
+      background: #f3f4ff; border-radius: 8px;
+      padding: 10px 14px; margin-bottom: 16px;
+    }
+
+    .id-label {
+      font-size: 9px; font-weight: 700; letter-spacing: 0.12em;
+      color: #6b7280; text-transform: uppercase; margin-bottom: 5px;
+    }
+
+    .id-value-wrap {
+      display: flex; align-items: center;
+      justify-content: space-between; gap: 8px;
+    }
+
+    .id-value {
+      font-family: 'JetBrains Mono', monospace; font-size: 18px;
+      color: #534da0; font-weight: 600; word-break: break-all;
+    }
+
+    .copy-btn {
+      background: #f9fafb; border: 1px solid rgba(148,163,184,0.6);
+      border-radius: 6px; padding: 6px 8px; cursor: pointer; color: #6b7280;
+      display: flex; align-items: center; justify-content: center;
+      flex-shrink: 0; transition: all 0.15s;
+    }
+
+    .copy-btn:hover {
+      background: #eef2ff;
+      color: #111827;
+      border-color: #534da0;
+    }
+
+    .checkin-btn {
+      display: inline-flex; align-items: center; gap: 6px;
+      background: #047857; color: #ecfdf5;
+      border: 1px solid #065f46; border-radius: 8px;
+      padding: 8px 14px; font-size: 12px; font-weight: 600;
+      font-family: 'DM Sans', sans-serif; cursor: pointer;
+      transition: all 0.2s; flex-shrink: 0;
+    }
+    .checkin-btn:hover { background: #065f46; color: #ecfdf5; }
+    .checkin-btn:disabled { opacity: 0.5; cursor: not-allowed; }
+    .checkin-btn.checked { background: #047857; color: #bbf7d0; }
+
+    .details-grid {
+      display: grid; grid-template-columns: 1fr 1fr;
+      gap: 10px 20px; margin-bottom: 14px;
+    }
+
+    .detail-label {
+      font-size: 10px; font-weight: 600; letter-spacing: 0.08em;
+      color: #6b7280; text-transform: uppercase;
+    }
+
+    .detail-value { font-size: 13px; color: #111827; margin-top: 2px; }
+    .detail-value.stale { color: #b91c1c; font-weight: 600; }
+    .detail-value.redeemed {
+      color: #b91c1c;
+      font-weight: 700;
+      text-transform: uppercase;
+    }
+
+    .tags-row {
+      display: flex; flex-wrap: wrap; gap: 6px;
+      padding-top: 12px; border-top: 1px solid rgba(148,163,184,0.35);
+    }
+
+    .tag {
+      font-size: 11px; font-weight: 500; color: #4b5563;
+      background: #e5e7eb; border-radius: 999px; padding: 4px 10px;
+    }
+
+    .tag.highlight {
+      color: #111827;
+      background: #e0e4ff;
+      border: 1px solid rgba(83,77,160,0.4);
+    }
+
+    .empty {
+      text-align: center; padding: 60px 20px; display: none;
+    }
+
+    .empty.visible { display: block; }
+    .empty-text { font-size: 18px; font-weight: 600; color: #6b7280; }
+    .empty-sub { font-size: 13px; color: #9ca3af; margin-top: 6px; }
+
+    .footer {
+      text-align: center; font-size: 11px; color: #9ca3af;
+      margin-top: 40px; padding-top: 20px;
+      border-top: 1px solid rgba(148,163,184,0.4);
+    }
+    .footer-link { color: #6b7280; text-decoration: none; transition: color 0.2s; }
+    .footer-link:hover { color: #534da0; }
+
+    /* Toast */
+    .toast {
+      position: fixed; bottom: 24px; left: 50%; transform: translateX(-50%) translateY(20px);
+      background: #111827; border: 1px solid rgba(15,23,42,0.8);
+      border-radius: 8px; padding: 10px 18px; font-size: 13px; color: #10b981;
+      opacity: 0; transition: all 0.3s ease; pointer-events: none; z-index: 100;
+    }
+
+    .toast.show { opacity: 1; transform: translateX(-50%) translateY(0); }
+
+    @media (max-width: 600px) {
+      h1 { font-size: 24px; }
+      .details-grid { grid-template-columns: 1fr; }
+      .header-top { flex-direction: column; }
+    }
+  </style>
+</head>
+<body>
+
+  <div class="container">
+    <!-- Header -->
+    <div class="header">
+      <div class="header-top">
+        <div>
+          <div class="badge"><span class="live-dot"></span>LIVE DASHBOARD</div>
+          <h1 id="pageTitle">Redemption Dashboard</h1>
+          <div class="mode-toggle">
+            <button class="mode-pill active" id="modeEligible" onclick="setMode('eligible')">Eligible</button>
+            <button class="mode-pill" id="modeRedeemed" onclick="setMode('redeemed')">Redeemed</button>
+          </div>
+        </div>
+        <div class="header-actions">
+          <div class="stat-card">
+            <span class="stat-number" id="totalCount">—</span>
+            <span class="stat-label" id="statLabel">Total Eligible</span>
+          </div>
+          <button class="refresh-btn" id="downloadBtn" onclick="downloadCSV()" title="Download contacts as CSV">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round">
+              <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/>
+              <polyline points="7 10 12 15 17 10"/>
+              <line x1="12" y1="15" x2="12" y2="3"/>
+            </svg>
+            Download CSV
+          </button>
+          <button class="refresh-btn" id="refreshBtn" onclick="loadContacts()">
+            <svg id="refreshIcon" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round">
+              <path d="M21.5 2v6h-6M2.5 22v-6h6M2 11.5a10 10 0 0 1 18.8-4.3M22 12.5a10 10 0 0 1-18.8 4.2"/>
+            </svg>
+            Refresh
+          </button>
+        </div>
+      </div>
+      <p class="last-refresh" id="lastRefresh"></p>
+    </div>
+
+    <!-- Search -->
+    <div class="search-wrap">
+      <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#888" stroke-width="2" stroke-linecap="round">
+        <circle cx="11" cy="11" r="8"/><path d="m21 21-4.3-4.3"/>
+      </svg>
+      <input type="text" class="search-input" id="searchInput" placeholder="Search by name, phone, or email..." oninput="filterContacts()">
+    </div>
+
+    <!-- Error -->
+    <div class="error-bar" id="errorBar"></div>
+
+    <!-- Loading -->
+    <div class="loading" id="loading">
+      <div class="skeleton"></div>
+      <div class="skeleton" style="animation-delay: 0.15s"></div>
+      <div class="skeleton" style="animation-delay: 0.3s"></div>
+    </div>
+
+    <!-- Empty -->
+    <div class="empty" id="emptyState">
+      <p class="empty-text">No contacts found</p>
+      <p class="empty-sub" id="emptySub">No contacts are currently eligible.</p>
+    </div>
+
+    <!-- Contacts -->
+    <div class="card-grid" id="cardGrid"></div>
+
+    <!-- Footer -->
+    <div class="footer">Powered by <a href="https://studio.makoa.us" target="_blank" rel="noopener noreferrer" class="footer-link">Studio M</a></div>
+  </div>
+
+  <!-- Toast -->
+  <div class="toast" id="toast">✓ ID copied to clipboard</div>
+
+  <script>
+    let allContacts = [];
+    let currentMode = 'eligible';
+    let redemptionWindowDays = 7;
+
+    async function loadConfig() {
+      try {
+        const res = await fetch('/.netlify/functions/config');
+        const data = await res.json();
+        const title = data.title || 'Redemption Dashboard';
+        document.title = title;
+        const heading = document.getElementById('pageTitle');
+        if (heading) heading.textContent = title;
+        if (data.redemptionWindowDays != null && data.redemptionWindowDays >= 0) {
+          redemptionWindowDays = data.redemptionWindowDays;
+        }
+      } catch (e) {
+        // Fallback to default title on any error
+      }
+    }
+
+    function formatPhone(p) {
+      if (!p) return '—';
+      const d = p.replace(/\D/g, '');
+      if (d.length === 11 && d[0] === '1') {
+        return `(${d.slice(1,4)}) ${d.slice(4,7)}-${d.slice(7)}`;
+      }
+      return p;
+    }
+
+    function formatRedemptionCode(id) {
+      if (id == null) return '—';
+      const s = String(id);
+      const lastFour = s.length <= 4 ? s : s.slice(-4);
+      return lastFour.toUpperCase();
+    }
+
+    function formatDate(d) {
+      if (!d) return '—';
+      return new Date(d).toLocaleDateString('en-US', {
+        month: 'short', day: 'numeric', year: 'numeric',
+        hour: 'numeric', minute: '2-digit'
+      });
+    }
+
+    function daysLeftToRedeem(dateAdded, windowDays = 7) {
+      if (!dateAdded) return null;
+      const added = new Date(dateAdded);
+      const now = new Date();
+      const daysElapsed = Math.floor((now - added) / (1000 * 60 * 60 * 24));
+      return Math.max(0, windowDays - daysElapsed);
+    }
+
+    async function checkIn(contactId, btn) {
+      if (btn.disabled) return;
+      btn.disabled = true;
+      const toast = document.getElementById('toast');
+      try {
+        const res = await fetch('/.netlify/functions/checkin', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ contactId }),
+        });
+        const data = await res.json();
+        if (data.error) throw new Error(data.error);
+        const now = new Date().toISOString();
+        const contact = allContacts.find((c) => c.id === contactId);
+        if (contact) contact.checkedInAt = now;
+        filterContacts();
+        toast.textContent = '✓ Check-in recorded';
+        toast.style.color = '#10b981';
+        btn.classList.add('checked');
+        btn.innerHTML = '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/></svg> Checked in';
+      } catch (err) {
+        toast.textContent = '⚠️ ' + (err.message || 'Check-in failed');
+        toast.style.color = '#fca5a5';
+        if (err.message === 'Already checked in') {
+          btn.classList.add('checked');
+          btn.innerHTML = '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/></svg> Checked in';
+        } else {
+          btn.disabled = false;
+        }
+      }
+      toast.classList.add('show');
+      setTimeout(() => {
+        toast.classList.remove('show');
+        toast.textContent = '✓ ID copied to clipboard';
+        toast.style.color = '#10b981';
+      }, 3000);
+    }
+
+    function escapeCSV(val) {
+      if (val == null || val === '') return '';
+      const s = String(val);
+      if (s.includes(',') || s.includes('"') || s.includes('\n')) {
+        return '"' + s.replace(/"/g, '""') + '"';
+      }
+      return s;
+    }
+
+    function downloadCSV() {
+      const term = document.getElementById('searchInput').value.toLowerCase();
+      const contacts = allContacts.filter(c =>
+        !term ||
+        (c.name || '').toLowerCase().includes(term) ||
+        (c.phone || '').includes(term) ||
+        (c.email || '').toLowerCase().includes(term) ||
+        (c.id || '').toLowerCase().includes(term)
+      );
+      if (contacts.length === 0) {
+        const toast = document.getElementById('toast');
+        toast.textContent = 'No contacts to download';
+        toast.classList.add('show');
+        setTimeout(() => {
+          toast.classList.remove('show');
+          toast.textContent = '✓ ID copied to clipboard';
+        }, 2000);
+        return;
+      }
+      const headers = ['Name', 'Redemption Code', 'Phone', 'Email', 'Date Added', 'Date Updated'];
+      const rows = contacts.map(c => [
+        escapeCSV(c.name || ''),
+        escapeCSV(formatRedemptionCode(c.id || '')),
+        escapeCSV(c.phone || ''),
+        escapeCSV(c.email || ''),
+        escapeCSV(formatDate(c.dateAdded)),
+        escapeCSV(formatDate(c.dateUpdated)),
+      ].join(','));
+      const csv = [headers.join(','), ...rows].join('\n');
+      const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = 'redemption-contacts-' + new Date().toISOString().slice(0, 10) + '.csv';
+      a.click();
+      URL.revokeObjectURL(url);
+    }
+
+    function renderContacts(contacts) {
+      const grid = document.getElementById('cardGrid');
+      const empty = document.getElementById('emptyState');
+      const emptySub = document.getElementById('emptySub');
+      const search = document.getElementById('searchInput').value;
+      const isRedeemedMode = currentMode === 'redeemed';
+
+      if (contacts.length === 0) {
+        grid.innerHTML = '';
+        empty.classList.add('visible');
+        emptySub.textContent = search
+          ? 'Try a different search term'
+          : isRedeemedMode
+            ? 'No contacts are redeemed yet.'
+            : 'No contacts are currently eligible.';
+        return;
+      }
+
+      empty.classList.remove('visible');
+      grid.innerHTML = contacts.map((c, i) => {
+        const buttonHtml = isRedeemedMode
+          ? `
+            <button class="checkin-btn" disabled>
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round">
+                <path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/>
+                <polyline points="22 4 12 14.01 9 11.01"/>
+              </svg>
+              Redeemed
+            </button>
+          `
+          : `
+            <button class="checkin-btn" onclick="checkIn('${c.id}', this)" data-contact-id="${c.id}">
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round">
+                <path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/>
+                <polyline points="22 4 12 14.01 9 11.01"/>
+              </svg>
+              Check in
+            </button>
+          `;
+
+        return `
+        <div class="card" style="animation-delay: ${i * 0.06}s">
+          <div class="card-header">
+            <div style="display: flex; align-items: center; gap: 14px;">
+              <div class="avatar">${(c.name || '?')[0].toUpperCase()}</div>
+              <div class="card-name">${c.name || 'Unknown'}</div>
+            </div>
+            ${buttonHtml}
+          </div>
+
+          <div class="id-row">
+            <div class="id-label">Redemption Code</div>
+            <div class="id-value-wrap">
+              <span class="id-value">${formatRedemptionCode(c.id)}</span>
+            </div>
+          </div>
+
+          <div class="details-grid">
+            <div>
+              <div class="detail-label">Phone</div>
+              <div class="detail-value">${formatPhone(c.phone)}</div>
+            </div>
+            <div>
+              <div class="detail-label">Email</div>
+              <div class="detail-value">${c.email || '—'}</div>
+            </div>
+            <div>
+              <div class="detail-label">Added</div>
+              <div class="detail-value">${formatDate(c.dateAdded)}</div>
+            </div>
+            <div>
+              <div class="detail-label">Days left to redeem</div>
+              ${(() => {
+                if (c.checkedInAt || currentMode === 'redeemed') {
+                  return '<div class="detail-value redeemed">REDEEMED</div>';
+                }
+                const daysLeft = daysLeftToRedeem(c.dateAdded, redemptionWindowDays);
+                const expired = daysLeft !== null && daysLeft === 0;
+                const text = daysLeft === null ? '—' : daysLeft === 0 ? 'Expired' : daysLeft + ' days left';
+                return `<div class="detail-value ${expired ? 'stale' : ''}">${text}</div>`;
+              })()}
+            </div>
+            <div>
+              <div class="detail-label">Checked in</div>
+              <div class="detail-value">${formatDate(c.checkedInAt)}</div>
+            </div>
+          </div>
+        </div>
+        `;
+      }).join('');
+    }
+
+    function filterContacts() {
+      const term = document.getElementById('searchInput').value.toLowerCase();
+      const filtered = allContacts.filter(c =>
+        !term ||
+        (c.name || '').toLowerCase().includes(term) ||
+        (c.phone || '').includes(term) ||
+        (c.email || '').toLowerCase().includes(term) ||
+        formatRedemptionCode(c.id || '').toLowerCase().includes(term)
+      );
+      renderContacts(filtered);
+    }
+
+    async function loadContacts() {
+      const btn = document.getElementById('refreshBtn');
+      const icon = document.getElementById('refreshIcon');
+      const loading = document.getElementById('loading');
+      const errorBar = document.getElementById('errorBar');
+
+      btn.disabled = true;
+      icon.classList.add('spinning');
+      loading.style.display = 'flex';
+      errorBar.classList.remove('visible');
+      document.getElementById('cardGrid').innerHTML = '';
+
+      try {
+        const res = await fetch('/.netlify/functions/contacts?mode=' + encodeURIComponent(currentMode));
+        const data = await res.json();
+
+        if (data.error) throw new Error(data.error);
+
+        allContacts = data.contacts || [];
+        document.getElementById('totalCount').textContent = allContacts.length;
+        const statLabel = document.getElementById('statLabel');
+        if (statLabel) {
+          statLabel.textContent = currentMode === 'redeemed' ? 'Total Redeemed' : 'Total Eligible';
+        }
+        document.getElementById('lastRefresh').textContent =
+          'Last updated: ' + new Date().toLocaleTimeString();
+
+        filterContacts();
+      } catch (err) {
+        errorBar.textContent = '⚠️ ' + (err.message || 'Failed to load contacts. Check your API key.');
+        errorBar.classList.add('visible');
+      } finally {
+        loading.style.display = 'none';
+        btn.disabled = false;
+        icon.classList.remove('spinning');
+      }
+    }
+
+    function setMode(mode) {
+      if (currentMode === mode) return;
+      currentMode = mode;
+      const eligibleBtn = document.getElementById('modeEligible');
+      const redeemedBtn = document.getElementById('modeRedeemed');
+      if (eligibleBtn && redeemedBtn) {
+        eligibleBtn.classList.toggle('active', mode === 'eligible');
+        redeemedBtn.classList.toggle('active', mode === 'redeemed');
+      }
+      loadContacts();
+    }
+
+    // Auto-load on page open
+    loadConfig();
+    loadContacts();
+
+    // Refresh when user returns to this tab (no constant polling)
+    document.addEventListener('visibilitychange', () => {
+      if (document.visibilityState === 'visible') loadContacts();
+    });
+  </script>
+
+</body>
+</html>
