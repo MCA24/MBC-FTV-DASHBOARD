@@ -181,10 +181,10 @@ Running `node list-custom-fields.js` prints every custom field for your location
 
 | Variable | Example value | Use |
 |----------|----------------|-----|
-| GHL_API_KEY | `pit-70a97896-...` | API auth for GHL. |
-| GHL_LOCATION_ID | `I5A1JhJFJM9673dUP7Pk` | Which GHL location the dashboard uses. |
-| GHL_CHECKIN_FIELD_ID | `m6jdYHYxbaxNjpGKhPhl` | Optional duplicate of primary action field ID; **code uses PRIMARY_ACTION_FIELD_ID**. |
-| PRIMARY_ACTION_FIELD_ID | `m6jdYHYxbaxNjpGKhPhl` | Custom field where check-in/redemption is stored. |
+| GHL_API_KEY | `pit-xxxxxxx` | API auth for GHL. |
+| GHL_LOCATION_ID | `xxxxxxxxxxxxx` | Which GHL location the dashboard uses. |
+| GHL_CHECKIN_FIELD_ID | `xxxxxxxxxxx` | Optional duplicate of primary action field ID; **code uses PRIMARY_ACTION_FIELD_ID**. |
+| PRIMARY_ACTION_FIELD_ID | `xxxxxxxxxxx` | Custom field where check-in/redemption is stored. |
 | REDEMPTION_TAG | `ftv_qualified` | Tag for “eligible to redeem”. |
 | REDEEMED_TAG | `ftv_rewarded` | Tag for “already redeemed”. |
 | REDEMPTION_TITLE | `FTV Redemption Dashboard` | Dashboard title in UI. |
