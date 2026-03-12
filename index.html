@@ -418,9 +418,13 @@
 
     function formatDate(d) {
       if (!d) return '—';
-      return new Date(d).toLocaleDateString('en-US', {
-        month: 'short', day: 'numeric', year: 'numeric',
-        hour: 'numeric', minute: '2-digit'
+      return new Date(d).toLocaleString('en-US', {
+        month: 'short',
+        day: 'numeric',
+        year: 'numeric',
+        hour: 'numeric',
+        minute: '2-digit',
+        timeZone: 'America/Los_Angeles',
       });
     }
 
@@ -646,7 +650,12 @@
           statLabel.textContent = currentMode === 'redeemed' ? 'Total Redeemed' : 'Total Eligible';
         }
         document.getElementById('lastRefresh').textContent =
-          'Last updated: ' + new Date().toLocaleTimeString();
+          'Last updated: ' + new Date().toLocaleTimeString('en-US', {
+            hour: 'numeric',
+            minute: '2-digit',
+            second: '2-digit',
+            timeZone: 'America/Los_Angeles',
+          });
 
         filterContacts();
       } catch (err) {

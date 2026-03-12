@@ -12,6 +12,47 @@ function loadEnv() {
 
 loadEnv();
 
+const PACIFIC_TZ = 'America/Los_Angeles';
+
+/** Returns a Date formatted as ISO 8601 in Pacific time, preserving the local clock time (e.g. 2026-03-12T07:30:00.000-07:00). */
+function toPacificIso(date) {
+  const d = date instanceof Date ? date : new Date(date);
+  if (Number.isNaN(d.getTime())) {
+    return null;
+  }
+
+  const dateStr = d.toLocaleDateString('sv-SE', { timeZone: PACIFIC_TZ });
+  const timeStr = d.toLocaleTimeString('sv-SE', { timeZone: PACIFIC_TZ, hour12: false });
+  const ms = String(d.getUTCMilliseconds()).padStart(3, '0');
+
+  const fmt = new Intl.DateTimeFormat('en-US', { timeZone: PACIFIC_TZ, timeZoneName: 'longOffset' });
+  const parts = fmt.formatToParts(d);
+  const tzPart = parts.find((p) => p.type === 'timeZoneName');
+
+  let offset = '-08:00';
+  if (tzPart) {
+    const m = tzPart.value.match(/GMT([+-])(\d{1,2})(?::(\d{2}))?/);
+    if (m) {
+      const h = m[2].padStart(2, '0');
+      const min = (m[3] || '00').padStart(2, '0');
+      offset = `${m[1]}${h}:${min}`;
+    }
+  }
+
+  return `${dateStr}T${timeStr}.${ms}${offset}`;
+}
+
+/** Resolves the action value as ISO 8601 in Pacific time, keeping the same local date/time when a value is provided. */
+function resolveActionValue(rawValue) {
+  if (rawValue != null && String(rawValue).trim() !== '') {
+    const converted = toPacificIso(rawValue);
+    // If we couldn't parse, fall back to the raw value so we don't break anything.
+    return converted || rawValue;
+  }
+  // Default: now, in Pacific.
+  return toPacificIso(new Date());
+}
+
 function fetchContact(apiKey, contactId, locationId) {
   return new Promise((resolve, reject) => {
     const path = `/contacts/${contactId}?locationId=${locationId}`;
@@ -145,7 +186,7 @@ exports.handler = async (event) => {
     };
   }
 
-  const actionValue = body.value || new Date().toISOString();
+  const actionValue = resolveActionValue(body.value);
 
   const existingTags = (existingContact && existingContact.tags) || [];
   const redemptionTagLower = String(REDEMPTION_TAG).toLowerCase();
